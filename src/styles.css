@@ -478,7 +478,7 @@ textarea:focus {
   display: grid;
   grid-template-columns: 0.85fr 1.15fr;
   gap: 18px;
-  margin-bottom: 18px;
+  margin-top: 18px;
   align-items: start;
 }
 

@@ -616,34 +616,6 @@ function AdminView({
         <Stat label="Paid" value={formatMoney(totalPaid)} />
       </div>
 
-      <div className="finance-grid">
-        <section className="finance-panel">
-          <div className="panel-head">
-            <h2>Financial details</h2>
-            <WalletCards size={20} />
-          </div>
-          <div className="metric-list">
-            <Metric label="Total received" value={formatMoney(totalPaid)} />
-            <Metric label="Completed trips" value={completedBookings.length} />
-            <Metric label="Average per trip" value={formatMoney(averagePaid)} />
-            <Metric label="Total km recorded" value={`${totalKm.toLocaleString("en-IN")} km`} />
-          </div>
-        </section>
-
-        <section className="history-panel">
-          <div className="panel-head">
-            <h2>Transaction history</h2>
-            <ReceiptText size={20} />
-          </div>
-          {completedBookings.length ? <TransactionHistory bookings={completedBookings} /> : (
-            <div className="empty compact-empty">
-              <h3>No payments yet</h3>
-              <p>Finished trips with amount paid will appear here.</p>
-            </div>
-          )}
-        </section>
-      </div>
-
       <div className="owner-grid">
         <section className="list-panel">
           <div className="panel-head">
@@ -679,6 +651,36 @@ function AdminView({
             monthCursor={monthCursor}
             onMonthChange={(amount) => onMonthChange(addMonths(monthCursor, amount))}
           />
+        </section>
+      </div>
+
+      <div className="finance-grid">
+        <section className="finance-panel">
+          <div className="panel-head">
+            <h2>Financial details</h2>
+            <WalletCards size={20} />
+          </div>
+          <div className="metric-list">
+            <Metric label="Total received" value={formatMoney(totalPaid)} />
+            <Metric label="Completed trips" value={completedBookings.length} />
+            <Metric label="Average per trip" value={formatMoney(averagePaid)} />
+            <Metric label="Total km recorded" value={`${totalKm.toLocaleString("en-IN")} km`} />
+          </div>
+        </section>
+
+        <section className="history-panel">
+          <div className="panel-head">
+            <h2>Transaction history</h2>
+            <ReceiptText size={20} />
+          </div>
+          {completedBookings.length ? (
+            <TransactionHistory bookings={completedBookings} />
+          ) : (
+            <div className="empty compact-empty">
+              <h3>No payments yet</h3>
+              <p>Finished trips with amount paid will appear here.</p>
+            </div>
+          )}
         </section>
       </div>
     </section>
