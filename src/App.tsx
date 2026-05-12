@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Download,
   IndianRupee,
   LogOut,
   Plus,
@@ -119,6 +120,10 @@ function formatMoney(value: number) {
 function parseKm(value: string) {
   const numeric = Number(String(value || "").replace(/[^\d.]/g, ""));
   return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function transactionDate(booking: Booking) {
+  return String(booking.completedAt || booking.endDate).slice(0, 10);
 }
 
 function dateInRange(date: string, start: string, end: string) {
@@ -697,36 +702,184 @@ function Metric({ label, value }: { label: string; value: string | number }) {
 }
 
 function TransactionHistory({ bookings }: { bookings: Booking[] }) {
+  const [query, setQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [pageSize, setPageSize] = useState(5);
+  const [page, setPage] = useState(1);
+
+  const filteredBookings = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    return bookings.filter((booking) => {
+      const date = transactionDate(booking);
+      const searchable = `${booking.name} ${booking.mobile} ${booking.from} ${booking.to} ${booking.pickupAddress}`.toLowerCase();
+      const matchesQuery = !normalizedQuery || searchable.includes(normalizedQuery);
+      const matchesFrom = !dateFrom || date >= dateFrom;
+      const matchesTo = !dateTo || date <= dateTo;
+      const matchesAmount = !minAmount || Number(booking.amountPaid || 0) >= Number(minAmount);
+      return matchesQuery && matchesFrom && matchesTo && matchesAmount;
+    });
+  }, [bookings, dateFrom, dateTo, minAmount, query]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredBookings.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const visibleBookings = filteredBookings.slice(pageStart, pageStart + pageSize);
+  const filteredTotal = filteredBookings.reduce((sum, booking) => sum + Number(booking.amountPaid || 0), 0);
+
+  function updateFilter(callback: () => void) {
+    callback();
+    setPage(1);
+  }
+
+  function resetFilters() {
+    setQuery("");
+    setDateFrom("");
+    setDateTo("");
+    setMinAmount("");
+    setPageSize(5);
+    setPage(1);
+  }
+
+  function exportCsv() {
+    const header = ["Date", "Customer", "Mobile", "From", "To", "Pickup", "KM", "Amount"];
+    const rows = filteredBookings.map((booking) => [
+      transactionDate(booking),
+      booking.name,
+      booking.mobile,
+      booking.from,
+      booking.to,
+      booking.pickupAddress,
+      booking.finalKm || "0",
+      String(booking.amountPaid || 0),
+    ]);
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `travel-transactions-${toISODate(new Date())}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
-    <div className="table-wrap">
-      <table className="transaction-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Customer</th>
-            <th>Route</th>
-            <th>KM</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {bookings.map((booking) => (
-            <tr key={booking.id}>
-              <td>{prettyDate((booking.completedAt || booking.endDate).slice(0, 10))}</td>
-              <td>
-                <strong>{booking.name}</strong>
-                <span>{booking.mobile}</span>
-              </td>
-              <td>
-                {booking.from} to {booking.to}
-              </td>
-              <td>{booking.finalKm || "0"}</td>
-              <td>{formatMoney(booking.amountPaid)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <div className="history-summary">
+        <Metric label="Filtered transactions" value={filteredBookings.length} />
+        <Metric label="Filtered amount" value={formatMoney(filteredTotal)} />
+      </div>
+
+      <div className="history-filters">
+        <label>
+          <span>Search</span>
+          <input
+            value={query}
+            onChange={(event) => updateFilter(() => setQuery(event.target.value))}
+            type="search"
+            placeholder="Name, mobile, route"
+          />
+        </label>
+        <label>
+          <span>From date</span>
+          <input value={dateFrom} onChange={(event) => updateFilter(() => setDateFrom(event.target.value))} type="date" />
+        </label>
+        <label>
+          <span>To date</span>
+          <input value={dateTo} onChange={(event) => updateFilter(() => setDateTo(event.target.value))} type="date" />
+        </label>
+        <label>
+          <span>Min amount</span>
+          <input
+            value={minAmount}
+            onChange={(event) => updateFilter(() => setMinAmount(event.target.value))}
+            type="number"
+            min={0}
+            placeholder="0"
+          />
+        </label>
+        <label>
+          <span>Rows</span>
+          <select value={pageSize} onChange={(event) => updateFilter(() => setPageSize(Number(event.target.value)))}>
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+          </select>
+        </label>
+        <div className="filter-actions">
+          <button className="secondary small" type="button" onClick={resetFilters}>
+            Reset
+          </button>
+          <button className="secondary small" type="button" onClick={exportCsv} disabled={!filteredBookings.length}>
+            <Download size={16} />
+            Export
+          </button>
+        </div>
+      </div>
+
+      {visibleBookings.length ? (
+        <div className="table-wrap">
+          <table className="transaction-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Route</th>
+                <th>KM</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleBookings.map((booking) => (
+                <tr key={booking.id}>
+                  <td>{prettyDate(transactionDate(booking))}</td>
+                  <td>
+                    <strong>{booking.name}</strong>
+                    <span>{booking.mobile}</span>
+                  </td>
+                  <td>
+                    {booking.from} to {booking.to}
+                    <span>{booking.pickupAddress}</span>
+                  </td>
+                  <td>{booking.finalKm || "0"}</td>
+                  <td>{formatMoney(booking.amountPaid)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="empty compact-empty">
+          <h3>No matching transactions</h3>
+          <p>Adjust the filters to see more completed trips.</p>
+        </div>
+      )}
+
+      <div className="pagination-row">
+        <span>
+          Showing {filteredBookings.length ? pageStart + 1 : 0}-{Math.min(pageStart + pageSize, filteredBookings.length)} of{" "}
+          {filteredBookings.length}
+        </span>
+        <div>
+          <button className="secondary small" type="button" disabled={currentPage <= 1} onClick={() => setPage((value) => value - 1)}>
+            Previous
+          </button>
+          <strong>
+            {currentPage} / {totalPages}
+          </strong>
+          <button
+            className="secondary small"
+            type="button"
+            disabled={currentPage >= totalPages}
+            onClick={() => setPage((value) => value + 1)}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
