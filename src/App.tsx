@@ -10,7 +10,9 @@ import {
   LogOut,
   Plus,
   QrCode,
+  ReceiptText,
   Trash2,
+  WalletCards,
 } from "lucide-react";
 import {
   authLogin,
@@ -112,6 +114,11 @@ function formatMoney(value: number) {
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function parseKm(value: string) {
+  const numeric = Number(String(value || "").replace(/[^\d.]/g, ""));
+  return Number.isFinite(numeric) ? numeric : 0;
 }
 
 function dateInRange(date: string, start: string, end: string) {
@@ -581,6 +588,12 @@ function AdminView({
   onSeed: () => void;
   onLogout: () => void;
 }) {
+  const completedBookings = [...bookings]
+    .filter((booking) => booking.status === "completed")
+    .sort((a, b) => String(b.completedAt || b.endDate).localeCompare(String(a.completedAt || a.endDate)));
+  const totalKm = completedBookings.reduce((sum, booking) => sum + parseKm(booking.finalKm), 0);
+  const averagePaid = completedBookings.length ? totalPaid / completedBookings.length : 0;
+
   return (
     <section className="admin-layout">
       <div className="admin-head">
@@ -609,6 +622,34 @@ function AdminView({
         <Stat label="Accepted" value={countByStatus("accepted")} />
         <Stat label="Completed" value={countByStatus("completed")} />
         <Stat label="Paid" value={formatMoney(totalPaid)} />
+      </div>
+
+      <div className="finance-grid">
+        <section className="finance-panel">
+          <div className="panel-head">
+            <h2>Financial details</h2>
+            <WalletCards size={20} />
+          </div>
+          <div className="metric-list">
+            <Metric label="Total received" value={formatMoney(totalPaid)} />
+            <Metric label="Completed trips" value={completedBookings.length} />
+            <Metric label="Average per trip" value={formatMoney(averagePaid)} />
+            <Metric label="Total km recorded" value={`${totalKm.toLocaleString("en-IN")} km`} />
+          </div>
+        </section>
+
+        <section className="history-panel">
+          <div className="panel-head">
+            <h2>Transaction history</h2>
+            <ReceiptText size={20} />
+          </div>
+          {completedBookings.length ? <TransactionHistory bookings={completedBookings} /> : (
+            <div className="empty compact-empty">
+              <h3>No payments yet</h3>
+              <p>Finished trips with amount paid will appear here.</p>
+            </div>
+          )}
+        </section>
       </div>
 
       <div className="owner-grid">
@@ -649,6 +690,49 @@ function AdminView({
         </section>
       </div>
     </section>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="metric">
+      <small>{label}</small>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function TransactionHistory({ bookings }: { bookings: Booking[] }) {
+  return (
+    <div className="table-wrap">
+      <table className="transaction-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Customer</th>
+            <th>Route</th>
+            <th>KM</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bookings.map((booking) => (
+            <tr key={booking.id}>
+              <td>{prettyDate((booking.completedAt || booking.endDate).slice(0, 10))}</td>
+              <td>
+                <strong>{booking.name}</strong>
+                <span>{booking.mobile}</span>
+              </td>
+              <td>
+                {booking.from} to {booking.to}
+              </td>
+              <td>{booking.finalKm || "0"}</td>
+              <td>{formatMoney(booking.amountPaid)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

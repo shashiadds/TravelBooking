@@ -50,6 +50,8 @@ textarea {
 .qr-panel,
 .login-panel,
 .list-panel,
+.finance-panel,
+.history-panel,
 .calendar-panel,
 .stat {
   background: rgba(255, 255, 255, 0.9);
@@ -160,6 +162,8 @@ textarea {
 .qr-panel,
 .login-panel,
 .list-panel,
+.finance-panel,
+.history-panel,
 .calendar-panel {
   border-radius: 8px;
   padding: 24px;
@@ -484,6 +488,79 @@ textarea:focus {
   align-items: start;
 }
 
+.finance-grid {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 18px;
+  margin-bottom: 18px;
+  align-items: start;
+}
+
+.metric-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.metric {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfb;
+}
+
+.metric small,
+.transaction-table span {
+  display: block;
+  color: var(--muted);
+}
+
+.metric strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.35rem;
+  line-height: 1.15;
+}
+
+.table-wrap {
+  width: 100%;
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.transaction-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.transaction-table th,
+.transaction-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 12px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.transaction-table th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.transaction-table td:last-child {
+  color: var(--green);
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.compact-empty {
+  margin-top: 16px;
+  padding: 18px;
+}
+
 .panel-head,
 .calendar-head,
 .card-top,
@@ -726,6 +803,7 @@ textarea:focus {
 
 @media (max-width: 920px) {
   .booking-layout,
+  .finance-grid,
   .owner-grid {
     grid-template-columns: 1fr;
   }
@@ -761,6 +839,7 @@ textarea:focus {
   }
 
   .form-grid,
+  .metric-list,
   .stats-row {
     grid-template-columns: 1fr;
   }
@@ -769,6 +848,8 @@ textarea:focus {
   .qr-panel,
   .login-panel,
   .list-panel,
+  .finance-panel,
+  .history-panel,
   .calendar-panel {
     padding: 16px;
   }
