@@ -186,6 +186,7 @@ export default function App() {
   }, [bookings]);
 
   const countByStatus = (status: BookingStatus) => bookings.filter((booking) => booking.status === status).length;
+  const pendingCount = countByStatus("pending");
   const totalPaid = bookings.reduce((sum, booking) => sum + Number(booking.amountPaid || 0), 0);
 
   async function addBooking(form: HTMLFormElement) {
@@ -348,6 +349,7 @@ export default function App() {
           </a>
           <a className={route === "admin" ? "active" : ""} href="#admin">
             Owner
+            {pendingCount ? <span className="nav-badge">{pendingCount}</span> : null}
           </a>
         </nav>
       </header>
@@ -358,6 +360,7 @@ export default function App() {
             bookings={bookings}
             sortedBookings={sortedBookings}
             countByStatus={countByStatus}
+            pendingCount={pendingCount}
             totalPaid={totalPaid}
             monthCursor={monthCursor}
             onMonthChange={setMonthCursor}
@@ -564,6 +567,7 @@ function AdminView({
   bookings,
   sortedBookings,
   countByStatus,
+  pendingCount,
   totalPaid,
   monthCursor,
   onMonthChange,
@@ -576,6 +580,7 @@ function AdminView({
   bookings: Booking[];
   sortedBookings: Booking[];
   countByStatus: (status: BookingStatus) => number;
+  pendingCount: number;
   totalPaid: number;
   monthCursor: Date;
   onMonthChange: (date: Date) => void;
@@ -599,6 +604,13 @@ function AdminView({
           <h1>Bookings and travel calendar</h1>
         </div>
         <div className="owner-actions">
+          {pendingCount ? (
+            <span className="notification-pill">
+              {pendingCount} new {pendingCount === 1 ? "request" : "requests"} awaiting action
+            </span>
+          ) : (
+            <span className="notification-pill quiet">No pending requests</span>
+          )}
           <a className="secondary" href={bookingLink()}>
             <QrCode size={17} />
             Open booking link
