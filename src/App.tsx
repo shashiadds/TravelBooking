@@ -366,12 +366,11 @@ export default function App() {
           <OwnerLogin error={loginError} onLogin={loginOwner} />
         )
       ) : (
-        <BookingView
-          qrUrl={qrUrl}
-          totalBookings={bookings.length}
-          submittedBooking={submittedBooking}
-          onSubmit={addBooking}
-          onBookAnother={() => setSubmittedBooking(null)}
+          <BookingView
+            qrUrl={qrUrl}
+            submittedBooking={submittedBooking}
+            onSubmit={addBooking}
+            onBookAnother={() => setSubmittedBooking(null)}
         />
       )}
     </main>
@@ -422,13 +421,11 @@ function OwnerLogin({
 
 function BookingView({
   qrUrl,
-  totalBookings,
   submittedBooking,
   onSubmit,
   onBookAnother,
 }: {
   qrUrl: string;
-  totalBookings: number;
   submittedBooking: Booking | null;
   onSubmit: (form: HTMLFormElement) => void;
   onBookAnother: () => void;
@@ -507,11 +504,6 @@ function BookingView({
         <a className="link-copy" href={bookingLink()}>
           {bookingLink()}
         </a>
-        <div className="mini-stat">
-          <QrCode size={28} />
-          <span>{totalBookings}</span>
-          <small>Total requests saved on this browser</small>
-        </div>
       </aside>
     </section>
   );
